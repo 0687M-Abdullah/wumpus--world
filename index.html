@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🧠 Wumpus Knowledge-Based Agent</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      padding: 40px;
+      max-width: 900px;
+      width: 100%;
+    }
+
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      text-align: center;
+      font-size: 2.5em;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 0.95em;
+    }
+
+    .control-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+      align-items: end;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .input-group label {
+      font-weight: 600;
+      color: #333;
+      font-size: 0.9em;
+    }
+
+    .input-group input {
+      padding: 10px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      font-size: 1em;
+      transition: border-color 0.3s;
+    }
+
+    .input-group input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    button {
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    .metrics-panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .metric {
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .metric-label {
+      font-size: 0.85em;
+      opacity: 0.9;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .metric-value {
+      font-size: 2em;
+      font-weight: bold;
+    }
+
+    .percepts-display {
+      padding: 15px;
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      min-height: 40px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .percept-badge {
+      display: inline-block;
+      padding: 5px 12px;
+      background: #ffc107;
+      color: #333;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+
+    .percept-badge.stench {
+      background: #dc3545;
+      color: white;
+    }
+
+    #grid {
+      display: grid;
+      margin: 30px auto;
+      gap: 2px;
+      padding: 20px;
+      background: #f0f0f0;
+      border-radius: 10px;
+      width: fit-content;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      border: 2px solid #999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+      border-radius: 5px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .cell:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .safe {
+      background: #28a745;
+      color: white;
+    }
+
+    .unknown {
+      background: #e9ecef;
+      color: #666;
+    }
+
+    .danger {
+      background: #dc3545;
+      color: white;
+    }
+
+    .agent {
+      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+      color: white;
+      font-size: 18px;
+      box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
+    }
+
+    .legend {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 30px;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 10px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .legend-color {
+      width: 30px;
+      height: 30px;
+      border-radius: 5px;
+      border: 2px solid #999;
+    }
+
+    .legend-text {
+      font-weight: 500;
+      color: #333;
+    }
+
+    .status-message {
+      text-align: center;
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
+    .status-running {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+
+    .status-complete {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 1.8em;
+      }
+
+      .cell {
+        width: 40px;
+        height: 40px;
+        font-size: 10px;
+      }
+
+      .control-panel {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>🧠 Wumpus World Agent</h1>
+  <p class="subtitle">Knowledge-Based Agent with Propositional Logic Inference</p>
+
+  <!-- Control Panel -->
+  <div class="control-panel">
+    <div class="input-group">
+      <label for="rows">Grid Rows:</label>
+      <input type="number" id="rows" value="4" min="3" max="10">
+    </div>
+    <div class="input-group">
+      <label for="cols">Grid Columns:</label>
+      <input type="number" id="cols" value="4" min="3" max="10">
+    </div>
+    <button onclick="initializeGame()">🚀 Start Game</button>
+    <button onclick="resetGame()" style="background: #6c757d;">🔄 Reset</button>
+  </div>
+
+  <!-- Metrics Panel -->
+  <div class="metrics-panel">
+    <div class="metric">
+      <div class="metric-label">Inference Steps</div>
+      <div class="metric-value" id="steps">0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Cells Visited</div>
+      <div class="metric-value" id="visited">0</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">Agent Position</div>
+      <div class="metric-value" id="position">0,0</div>
+    </div>
+  </div>
+
+  <!-- Percepts Display -->
+  <div class="percepts-display">
+    <strong>Current Percepts:</strong>
+    <span id="percepts">None</span>
+  </div>
+
+  <!-- Grid -->
+  <div id="grid"></div>
+
+  <!-- Legend -->
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);"></div>
+      <span class="legend-text">Agent (A)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #28a745;"></div>
+      <span class="legend-text">Safe (Visited)</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #e9ecef;"></div>
+      <span class="legend-text">Unknown</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-color" style="background: #dc3545;"></div>
+      <span class="legend-text">Danger (P/W)</span>
+    </div>
+  </div>
+
+  <!-- Status Message -->
+  <div class="status-message status-running" id="status" style="display: none;"></div>
+</div>
+
+<script>
+  // Game State
+  let gameState = {
+    grid: [],
+    rows: 4,
+    cols: 4,
+    agent: { x: 0, y: 0 },
+    knowledgeBase: [],
+    inferenceSteps: 0,
+    visitedCells: new Set(),
+    running: false,
+    gameInterval: null
+  };
+
+  /**
+   * Initialize a new game
+   */
+  function initializeGame() {
+    gameState.rows = parseInt(document.getElementById("rows").value);
+    gameState.cols = parseInt(document.getElementById("cols").value);
+
+    if (gameState.rows < 3 || gameState.cols < 3 || gameState.rows > 10 || gameState.cols > 10) {
+      alert("Grid dimensions must be between 3x3 and 10x10");
+      return;
+    }
+
+    resetGameState();
+    createGrid();
+    gameState.running = true;
+    showStatus("Game started! Agent is exploring...", "running");
+    runAgent();
+  }
+
+  /**
+   * Reset the game state
+   */
+  function resetGame() {
+    if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+    resetGameState();
+    draw();
+    document.getElementById("status").style.display = "none";
+  }
+
+  /**
+   * Reset game state variables
+   */
+  function resetGameState() {
+    gameState.grid = [];
+    gameState.agent = { x: 0, y: 0 };
+    gameState.knowledgeBase = [];
+    gameState.inferenceSteps = 0;
+    gameState.visitedCells = new Set();
+    gameState.running = false;
+
+    document.getElementById("steps").innerText = "0";
+    document.getElementById("visited").innerText = "0";
+    document.getElementById("position").innerText = "0,0";
+    document.getElementById("percepts").innerText = "None";
+  }
+
+  /**
+   * Create grid with random hazards
+   */
+  function createGrid() {
+    gameState.grid = [];
+
+    for (let i = 0; i < gameState.rows; i++) {
+      gameState.grid[i] = [];
+      for (let j = 0; j < gameState.cols; j++) {
+        gameState.grid[i][j] = {
+          pit: Math.random() < 0.15,
+          wumpus: false,
+          visited: false,
+          safe: false
+        };
+      }
+    }
+
+    // Place Wumpus randomly (not at start position)
+    let wumpusPlaced = false;
+    while (!wumpusPlaced) {
+      let wx = Math.floor(Math.random() * gameState.rows);
+      let wy = Math.floor(Math.random() * gameState.cols);
+      if (!(wx === 0 && wy === 0)) {
+        gameState.grid[wx][wy].wumpus = true;
+        wumpusPlaced = true;
+      }
+    }
+
+    // Ensure start position is safe
+    gameState.grid[0][0].pit = false;
+    gameState.grid[0][0].wumpus = false;
+    gameState.grid[0][0].visited = true;
+    gameState.visitedCells.add("0,0");
+  }
+
+  /**
+   * Get neighboring cells
+   */
+  function getNeighbors(x, y) {
+    const neighbors = [
+      [x + 1, y],
+      [x - 1, y],
+      [x, y + 1],
+      [x, y - 1]
+    ];
+    return neighbors.filter(
+      ([i, j]) => i >= 0 && j >= 0 && i < gameState.rows && j < gameState.cols
+    );
+  }
+
+  /**
+   * Get percepts at current position
+   */
+  function getPercepts(x, y) {
+    let breeze = false;
+    let stench = false;
+
+    for (let [i, j] of getNeighbors(x, y)) {
+      if (gameState.grid[i][j].pit) breeze = true;
+      if (gameState.grid[i][j].wumpus) stench = true;
+    }
+
+    return { breeze, stench };
+  }
+
+  /**
+   * Add knowledge to KB
+   */
+  function tellKB(x, y, percept) {
+    gameState.knowledgeBase.push({
+      x,
+      y,
+      percept,
+      neighbors: getNeighbors(x, y)
+    });
+  }
+
+  /**
+   * Ask KB if a cell is safe using inference
+   */
+  function askSafe(x, y) {
+    gameState.inferenceSteps++;
+
+    // Check if cell has been visited (definitely safe)
+    if (gameState.visitedCells.has(`${x},${y}`)) {
+      return true;
+    }
+
+    // Inference rule: If a cell has no breeze/stench, neighbors are safe
+    for (let clause of gameState.knowledgeBase) {
+      if (!clause.percept.breeze && !clause.percept.stench) {
+        for (let [i, j] of clause.neighbors) {
+          if (i === x && j === y) {
+            return true;
+          }
+        }
+      }
+    }
+
+    // Additional rule: If surrounded by safe cells, it's likely safe
+    let safeNeighborCount = 0;
+    for (let [i, j] of getNeighbors(x, y)) {
+      if (gameState.visitedCells.has(`${i},${j}`)) {
+        safeNeighborCount++;
+      }
+    }
+
+    // If 2+ neighbors are safe and no hazard indicators point here, consider safe
+    if (safeNeighborCount >= 2) {
+      let hasPitIndicator = false;
+      for (let clause of gameState.knowledgeBase) {
+        if (clause.percept.breeze) {
+          for (let [ni, nj] of clause.neighbors) {
+            if (ni === x && nj === y) hasPitIndicator = true;
+          }
+        }
+      }
+      if (!hasPitIndicator) return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Move agent to next cell
+   */
+  function moveAgent() {
+    const { x, y } = gameState.agent;
+    gameState.grid[x][y].visited = true;
+
+    // Get percepts at current location
+    const percept = getPercepts(x, y);
+    tellKB(x, y, percept);
+
+    // Update percept display
+    updatePercepts(percept);
+
+    // Find safe neighboring cell
+    const neighbors = getNeighbors(x, y);
+    let moved = false;
+
+    for (let [i, j] of neighbors) {
+      if (!gameState.visitedCells.has(`${i},${j}`) && askSafe(i, j)) {
+        gameState.agent = { x: i, y: j };
+        gameState.visitedCells.add(`${i},${j}`);
+        moved = true;
+        break;
+      }
+    }
+
+    // If no safe move found, stay in place (end game)
+    if (!moved) {
+      gameState.running = false;
+      showStatus(`Agent stuck! Visited ${gameState.visitedCells.size} cells.`, "complete");
+      if (gameState.gameInterval) clearInterval(gameState.gameInterval);
+    }
+  }
+
+  /**
+   * Update percept display
+   */
+  function updatePercepts(percept) {
+    let percepts = [];
+    if (percept.breeze) percepts.push('<span class="percept-badge">💨 Breeze</span>');
+    if (percept.stench) percepts.push('<span class="percept-badge stench">🤢 Stench</span>');
+
+    document.getElementById("percepts").innerHTML =
+      percepts.length > 0 ? percepts.join("") : "<em>None</em>";
+  }
+
+  /**
+   * Update metrics display
+   */
+  function updateMetrics() {
+    document.getElementById("steps").innerText = gameState.inferenceSteps;
+    document.getElementById("visited").innerText = gameState.visitedCells.size;
+    document.getElementById("position").innerText =
+      `${gameState.agent.x},${gameState.agent.y}`;
+  }
+
+  /**
+   * Show status message
+   */
+  function showStatus(message, type) {
+    const statusEl = document.getElementById("status");
+    statusEl.innerText = message;
+    statusEl.className = `status-message status-${type}`;
+    statusEl.style.display = "block";
+  }
+
+  /**
+   * Run the agent loop
+   */
+  function runAgent() {
+    gameState.gameInterval = setInterval(() => {
+      if (gameState.running) {
+        moveAgent();
+        draw();
+        updateMetrics();
+
+        if (gameState.inferenceSteps > 200) {
+          gameState.running = false;
+          showStatus("Maximum inference steps reached!", "complete");
+          clearInterval(gameState.gameInterval);
+        }
+      }
+    }, 600);
+  }
+
+  /**
+   * Draw the grid
+   */
+  function draw() {
+    const gridDiv = document.getElementById("grid");
+    gridDiv.style.gridTemplateColumns = `repeat(${gameState.cols}, 50px)`;
+    gridDiv.innerHTML = "";
+
+    for (let i = 0; i < gameState.rows; i++) {
+      for (let j = 0; j < gameState.cols; j++) {
+        const cell = document.createElement("div");
+        cell.classList.add("cell");
+
+        // Agent cell
+        if (gameState.agent.x === i && gameState.agent.y === j) {
+          cell.classList.add("agent");
+          cell.innerText = "🤖";
+        }
+        // Visited cell
+        else if (gameState.grid[i][j].visited) {
+          cell.classList.add("safe");
+          cell.innerText = "✓";
+        }
+        // Unknown cell
+        else {
+          cell.classList.add("unknown");
+          cell.innerText = "?";
+        }
+
+        // Show hazards (debug mode - can be toggled)
+        if (gameState.grid[i][j].pit || gameState.grid[i][j].wumpus) {
+          cell.classList.add("danger");
+          if (gameState.grid[i][j].pit && gameState.grid[i][j].wumpus) {
+            cell.innerText = "⚠️";
+          } else if (gameState.grid[i][j].pit) {
+            cell.innerText = "🕳️";
+          } else {
+            cell.innerText = "👹";
+          }
+        }
+
+        gridDiv.appendChild(cell);
+      }
+    }
+  }
+
+  // Initial draw
+  draw();
+</script>
+
+</body>
+</html>
